@@ -66,6 +66,22 @@ Requirements
 #. sudo (the script itself calls it, running as root without sudo won't work)
 #. jq (part of CustomPiOS dependencies)
 
+Build FullPageOS from this fork from within FullPageOS / Raspbian / Debian / Ubuntu
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+git clone https://github.com/GrumpyPhysicist/FullPageOS.git
+cd FullPageOS
+
+# If you want to include a wpa_supplicant.conf file directly in the build:
+# Please note that this stores the password in plaintext in the wpa_supplicant file.
+<eduroam installer from cat.eduroam.org> --wpa_conf -u "<user>" -p "<password"
+cp -Tr ~/.config/cat_installer ./src/modules/wpa_supplicant/filesystem/cat_installer
+
+./build_project 
+
+You will be prompted to download the image file if it is not allready in FullPageOS/src/image.
+The script uses sudo according to the directions below (sudo modprobe, sudo bash -x).
+
 Build FullPageOS From within FullPageOS / Raspbian / Debian / Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -78,9 +94,10 @@ You can build it by issuing the following commands::
     git clone https://github.com/guysoft/CustomPiOS.git
     git clone https://github.com/guysoft/FullPageOS.git
     cd FullPageOS/src/image
+    # This wget command doesn't work due to a javasript redirect. Follow the link manually and place the resulting zip file in the image directory.
     wget -c --trust-server-names 'https://downloads.raspberrypi.org/raspios_lite_armhf_latest'
     cd ..
-    ../../CustomPiOS/src/update-custompios-paths
+    ../CustomPiOS/src/update-custompios-paths
     sudo modprobe loop
     sudo bash -x ./build_dist
     

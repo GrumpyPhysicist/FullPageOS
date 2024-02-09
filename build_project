@@ -1,0 +1,65 @@
+#!/bin/bash
+
+DEFAULT_VARIANT=vh-no-access
+
+if [ "$#" -lt 1 ]
+then
+  variant="$DEFAULT_VARIANT"
+  echo "Building variant '$variant' (default)"
+elif [ "$1" == "" ]
+then
+  echo "Building base variant"
+  variant=
+else
+  variant="${1}"
+  echo "Building variant: '$variant'"
+fi
+
+_root=$(dirname -- "$( readlink -f -- "$0"; )")
+root=$(realpath "$_root")
+
+# Find the base image, even if the zipped image is using the xz suffix.
+while true
+do
+  _dir="$root/src/image"
+  >&2 echo "Searching for base zip image in \"$_dir\""
+
+  _image_zip=$(find "$root/src/image" -iname "*.img.xz" -print -or -iname "*.img.zip" -print | tail -n1)
+  if [ ! -z "$_image_zip" ] && [ -f "$_image_zip" ]
+  then
+    export BASE_ZIP_IMG=$( realpath "$_image_zip" --relative-to="$root/src/workspace")
+    _image_rel=$(realpath "$_image_zip" --relative-to="$root")
+    echo "found image: \"$_image_rel\""
+    echo
+    break
+  else
+    >&2 echo "No image found in src/image. Please manually download the latest rapios_lite image into the src/image directory."
+    >&2 echo "The resulting file is expected to end with .img or .img.xz"
+    >&2 echo "  https://downloads.raspberrypi.org/raspios_lite_armhf_latest"
+    >&2 read -p "Press enter to continue"
+    >&2 echo
+  fi
+done
+
+if [ -f "$root/src/modules/wpa_supplicant/filesystem/cat_installer/cat_installer.conf" ]
+then
+  echo "wpa_supplicant config file from cat installer found." 
+  echo "Will generate a wpa_supplicant.conf file into /boot/"
+  echo
+else
+  echo "No wpa_supplicant config file found."
+  echo "local wpa_supplicant module won't generate any files."
+  echo
+fi
+
+trap 'popd > /dev/null' EXIT 
+trap 'exit' INT
+pushd . > /dev/null
+
+cd "$root"
+git submodule init
+
+cd src
+../CustomPiOS/src/update-custompios-paths
+sudo modprobe loop
+sudo bash -x ./build_dist
