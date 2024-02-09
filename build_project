@@ -46,6 +46,9 @@ then
   echo "wpa_supplicant config file from cat installer found." 
   echo "Will generate a wpa_supplicant.conf file into /boot/"
   echo
+
+  mkdir -p "$root/src/modules/wpa_supplicant/filesystem/init"
+  date -Iseconds > "$root/src/modules/wpa_supplicant/filesystem/init/date.txt"
 else
   echo "No wpa_supplicant config file found."
   echo "local wpa_supplicant module won't generate any files."
@@ -62,4 +65,4 @@ git submodule init
 cd src
 ../CustomPiOS/src/update-custompios-paths
 sudo modprobe loop
-sudo bash -x ./build_dist
+sudo bash -x ./build_dist "$variant"
