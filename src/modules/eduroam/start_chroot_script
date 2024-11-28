@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# install wpa supplicant config file created using the cat installers from cat.eduroam.org
+# as described in the README
+# Please don't use this if the PI will be running in an unsecured location, as the eduroam network account password/secret key will 
+# be stored in plain text.
+# Written by Jonatan Pipping <jpipping@kth.se>
+# GPL V3
+########
+set -x
+set -e
+
+source /common.sh
+
+echo "Running eduroam module start chroot script"
+
+_DIR=/tmp/cat_installer
+_CAT_DIR=/home/pi/.config/cat_installer
+_CAT_CONF="$_CAT_DIR/cat_installer.conf"
+
+mkdir -p "$_DIR"
+trap 'rm -r "$_DIR"' exit
+
+unpack "/filesystem/cat_installer/" "$_DIR/" root
+export _cmd=$(ls "$_DIR"/eduroam-linux-* | head -n1)
+
+if [ "$_cmd" == "" ]
+then
+  >&2 echo "No cat installer script found. Please fetch an installer from cat.eduroam.org and place it in src/modules/eduroam/filesystem/cat_installer"
+  exit 1
+else
+  echo "Found cat installer script '$_cmd'."
+fi
+
+if [ -f "$_DIR/date.txt" ]
+then
+  _date="$(cat "$_DIR/date.txt")"
+  echo "Setting date to $_date"
+  date -s "$_date"
+fi
+
+(
+  cd "$_DIR"
+  sudo -u pi mkdir -p "$_CAT_DIR"
+  sudo -u pi "$_cmd" -u "$EDUROAM_USERNAME" -p "$EDUROAM_PASSWORD" -s
+
+  echo "country=SE" >> "$_CAT_CONF"
+  echo "update_config=1" >> "$_CAT_CONF"
+
+)

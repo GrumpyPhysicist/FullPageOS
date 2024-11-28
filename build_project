@@ -41,19 +41,19 @@ do
   fi
 done
 
-if [ -f "$root/src/modules/wpa_supplicant/filesystem/cat_installer/cat_installer.conf" ]
+if [ -f "$root/src/modules/eduroam/filesystem/cat_installer/eduroam-linux-"* ]
 then
-  echo "wpa_supplicant config file from cat installer found." 
-  echo "Will generate a wpa_supplicant.conf file into /boot/"
+  echo "Cat installer script found." 
+  echo "Will run eduroam installer script during build"
   echo
-
-  mkdir -p "$root/src/modules/wpa_supplicant/filesystem/init"
-  date -Iseconds > "$root/src/modules/wpa_supplicant/filesystem/init/date.txt"
 else
-  echo "No wpa_supplicant config file found."
-  echo "local wpa_supplicant module won't generate any files."
+  echo "No cat installer script found."
+  echo "Wont run eduroam installer script during build."
+  echo "Please download an installer for linux from cat.eduroam.org and place it in src/modules/eduroam/filesystem/cat_installer/"
   echo
 fi
+
+date -Iseconds > "$root/src/modules/eduroam/filesystem/cat_installer/date.txt"
 
 trap 'popd > /dev/null' EXIT 
 trap 'exit' INT

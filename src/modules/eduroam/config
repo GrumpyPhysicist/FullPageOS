@@ -1,0 +1,22 @@
+
+EDUROAM_NTP_SERVER=ntp.kth.se
+
+_username_exists=true
+_password_exists=true
+
+if [ -z "EDUROAM_USERNAME" ]
+then
+  >&2 echo "Please set the intended eduroam username in src/config.local as the EDUROAM_USERNAME variable"
+  _username_exists=false
+fi
+
+if [ -z "EDUROAM_PASSWORD" ]
+then
+  >&2 echo "Please set the intended eduroam password in src/config.local as the EDUROAM_PASSWORD variable"
+  _password_exists=false
+fi
+
+if [ "$_username_exists" == "false" ] || [ "$_password_exists" == "false" ]
+then
+  exit 1
+fi

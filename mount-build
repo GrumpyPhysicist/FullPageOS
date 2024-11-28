@@ -1,0 +1,104 @@
+#!/bin/bash
+
+DEFAULT_VARIANT=vh-no-access
+
+_flag_mount=false
+_flag_unmount=false
+
+usage() {
+  >&2 echo "Usage: $0 [-m] [-u]"
+  >&2 echo "    -m  (default) mount partitions"
+  >&2 echo "    -u  unmount partitions"
+}
+
+while getopts ":mu" arg; do
+  case $arg in
+    m)
+      _flag_mount=true
+      ;;
+    u)
+      _flag_unmount=true
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
+variant=${1:-$DEFAULT_VARIANT}
+img_file=$(ls "src/workspace-${variant}/"*.img | head -n1)
+_cmd=
+
+if [ $_flag_mount == "true" ] && [ $_flag_unmount == "true" ] ;
+then
+  >&2 echo "Error, both mount and unmount flags are present."
+  echo
+
+  usage
+  exit 1
+elif [ $_flag_unmount == "true" ] ;
+then
+  _cmd=loop_unmount
+else
+  _cmd=loop_mount
+fi
+
+## Commands to mount image via loop devide
+
+los() {
+  img="$1"
+  dev="$(sudo losetup --show -f -P "$img")"
+  echo "$dev"
+  for part in "$dev"?*; do
+    if [ "$part" = "${dev}p*" ]; then
+      part="${dev}"
+    fi
+    dst="/mnt/$(basename "$part")"
+    echo "$dst"
+    sudo mkdir -p "$dst"
+    sudo mount "$part" "$dst"
+  done
+}
+
+losd() {
+  dev="/dev/loop$1"
+  for part in "$dev"?*; do
+    if [ "$part" = "${dev}p*" ]; then
+      part="${dev}"
+    fi
+    dst="/mnt/$(basename "$part")"
+    sudo umount "$dst"
+  done
+  sudo losetup -d "$dev"
+}
+
+## Mount and unmount commands
+loop_mount() {
+  # get loop device
+  local loop_device_counter=0
+  local loop_device=
+  while true 
+  do
+    loop_device="/dev/loop${loop_device_counter}p0"
+    if [ ! -f "$loop_device" ]
+    then
+      break
+    fi
+    let "loop_device_counter++"
+  done
+
+  while read -r partition start
+  do
+    echo "$partition: $start"
+    sudo losetup --offset "$((start*8))" --find "$img_file"
+  done < <(partx -o NR,START -g "$img_file")
+  echo
+}
+
+loop_unmount() {
+  echo
+}
+
+$_cmd
